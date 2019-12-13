@@ -1,0 +1,69 @@
+See list of excerises routine
+
+
+create new excerise reoutine
+
+
+run through excerice routine
+
+loingin?
+
+
+
+routine
+excerice har {navn, ExSets}
+
+Exercise har
+
+Time and set based
+
+{
+name : "hang"
+Set : 5
+restBetween = 60
+aciveTime = 5
+}
+
+Reps and set base
+{
+name : "hang"
+set : 5
+restBetween = 60
+reps = 5
+}
+
+
+complex Repeat
+{
+name : "activeSplits"
+exercises : List Exercise
+sets = 5
+restBetween = 60
+}
+
+active split: active split 10 sec pres ind, 10 sec pres ud x 5 =  1 set
+active split object
+{
+"name" ="activesplit"
+sets = 5
+rest = 60
+exercises = [ex1, ex2]
+roundsPerSet = 5
+}
+
+ex1 = timeAndSet
+{
+name : "Pressout"
+Set : 1
+restBetween =0
+aciveTime = 10
+}
+
+
+ex2 = timeAndSet
+{
+name : "PressIn"
+Set : 1
+restBetween = 0
+aciveTime = 10
+}
