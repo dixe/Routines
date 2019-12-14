@@ -7,3 +7,4 @@ type Msg
     | GotSingle (Result Http.Error String)
     | FetchAll
     | FetchOne Int
+    | Filter String

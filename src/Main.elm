@@ -8,13 +8,12 @@ import Browser
 import Html exposing (Html)
 import Http
 import Json.Decode exposing (Decoder, field, map2, int, string, decodeString, errorToString, list) -- maybe not in type module
-
+import Routine exposing (createRoutineListMaybe, setFilterString)
 import List
 
 -- MAIN
 main =
     Browser.element { init = init, update = update, subscriptions =  subscriptions, view = view }
-
 
 init : () -> (Model, Cmd Msg)
 init _ = ({routines = Nothing , status = Loading }, fetchRoutines)
@@ -31,7 +30,7 @@ update msg model =
                  let (s,c) = fromResult result routinesInfoDecoder SuccessList
                  in
                      case s of
-                         SuccessList rs -> ((s,c), Just rs)
+                         SuccessList rs -> ((s,c),  createRoutineListMaybe rs)
                          _ -> ((s,c), model.routines)
 
              GotSingle result ->
@@ -40,6 +39,8 @@ update msg model =
                  ((Loading, fetchRoutines), model.routines)
              FetchOne id ->
                  (fetchRoutine id, model.routines)
+             Filter s -> ((model.status, Cmd.none), setFilterString s model.routines)
+
     in
       ({routines = routines, status = newStatus}, cmd)
 

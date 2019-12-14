@@ -19,7 +19,7 @@ viewMain model =
         [Font.size 20
         ]
     <|
-        column [width fill]
+        column [width fill, height fill]
             [
              el
              [ Region.heading 1
@@ -27,11 +27,14 @@ viewMain model =
              , alignTop
              , Font.size 36
              , padding 10
+             , alignTop
+             , height (fillPortion 1)
              ]
              (text "Welcome to routine browser")
-            , row [alignLeft, width fill]
-                [ el [alignTop] (routinesPanel model)
-                , el [paddingXY 5 0] (routinePanel model)
+            , spacerLine
+            , row [alignLeft, alignTop, height (fillPortion 10)]
+                [ el [alignTop, height fill, padding 5] (routinesPanel model)
+                , el [alignTop, padding 5] (routinePanel model)
                 ]
             ]
 
@@ -42,7 +45,9 @@ routinesPanel model =
                    , centerX
                    , padding 10
                    , spacing 10
+                   , height fill
                    , Border.rounded 4
+
                    , Background.color panelBackgroundColor
                    ]
         [
@@ -51,7 +56,8 @@ routinesPanel model =
              { onPress = Just FetchAll
              , label = text "Fetch routines"
              }
-        , viewRoutinesList model.routines
+        , viewRoutineFilter
+        , viewRoutines model.routines
         ]
 
 
@@ -75,7 +81,7 @@ routinePanel model =
 viewRoutine : Routine -> Element Msg
 viewRoutine r =
     column [ spacing 10
-           , paddingXY 10 10
+
            , Background.color panelBackgroundColor
            , Border.rounded 4
            ]
@@ -92,15 +98,24 @@ displayError problem =
         ParsingError data -> text ("Error parsing data : " ++ data)
 
 
-viewRoutinesList : RoutineListMaybe -> Element Msg
-viewRoutinesList routines =
-    let rs = case routines of
-                  Nothing -> []
-                  Just a -> a
-    in
-    column [ spacing 10
-           , paddingXY 0 10
-           , alignLeft] (List.map viewListedRoutine rs)
+viewRoutines : RoutineListMaybe -> Element Msg
+viewRoutines routines = column [ spacing 10
+                               , paddingXY 0 10
+                               , alignLeft] (List.map viewListedRoutine  (getRoutineListFiltered routines))
+
+
+
+viewRoutineFilter : Element Msg
+viewRoutineFilter = Input.text
+                    [
+                     Font.size 20
+                    ]
+                    { label = Input.labelHidden ""
+                    , onChange = Filter
+                    , placeholder = Nothing -- Just (Input.placeholder [] (text "Name Filter"))
+                    , text = ""
+                    }
+
 
 
 viewListedRoutine : RoutineInfo -> Element Msg
@@ -113,11 +128,15 @@ viewListedRoutine r = Input.button
 
 spacerLine : Element Msg
 spacerLine =
-    el [ width fill
-       , Border.width 1
-       , Border.color gray
-       ]
-       ( none)
+    column [width fill]
+        [
+         el [ width fill
+            , Border.width 1
+            , Border.color gray
+            ]
+             none
+        , el [ paddingXY 0 10 ] none
+        ]
 
 buttonLayout : (List (Attribute Msg))
 buttonLayout = [ Background.color buttonColor
