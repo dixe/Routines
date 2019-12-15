@@ -22,9 +22,6 @@ type alias RoutineListMaybe = Maybe {routines : List RoutineInfo, nameFilter : S
 
 --HELPER
 
-
-
-
 filterRoutine : String -> RoutineInfo -> Bool
 filterRoutine s ri = String.contains (String.toLower s) (String.toLower (getNameInfo ri))
 

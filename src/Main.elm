@@ -11,6 +11,9 @@ import Json.Decode exposing (Decoder, field, map2, int, string, decodeString, er
 import Routine exposing (createRoutineListMaybe, setFilterString)
 import List
 
+import Time
+
+
 -- MAIN
 main =
     Browser.element { init = init, update = update, subscriptions =  subscriptions, view = view }
@@ -40,7 +43,11 @@ update msg model =
              FetchOne id ->
                  (fetchRoutine id, model.routines)
              Filter s -> ((model.status, Cmd.none), setFilterString s model.routines)
-
+             Tick -> ((updateTick model.status, Cmd.none), model.routines)
+             StartRoutine ->
+                 case model.status of
+                     View r -> ((Run {routine = r, elapsed = 0}, Cmd.none), model.routines)
+                     _ -> ((model.status, Cmd.none), model.routines)
     in
       ({routines = routines, status = newStatus}, cmd)
 
@@ -74,9 +81,14 @@ fetchRoutine id = (Loading
 
 -- SUBSCRIPTIONS
 
+second : Float
+second = 1000
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+    case model.status of
+        Run r -> Time.every second (\_ -> Tick)
+        _ -> Sub.none
 
 
 -- VIEW

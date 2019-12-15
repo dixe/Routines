@@ -71,7 +71,7 @@ routinePanel model =
         View r ->
             viewRoutine r
         Run r ->
-            text ("running" ++ getName r)
+            text ("running" ++ getName r.routine ++ " Elapsed: " ++ String.fromInt r.elapsed)
         _ ->
             none
 
@@ -88,6 +88,11 @@ viewRoutine r =
 
     [ el [Font.size 25] (text (getName r))
     , viewRoutineExercises (getExercises r)
+    , Input.button
+        listButtonLayout
+        { onPress = Just (StartRoutine)
+        , label = text ("Start")
+        }
     ]
 
 

@@ -1,6 +1,8 @@
 module Message exposing (Msg(..))
 
 import Http exposing (..)
+import Time
+
 
 type Msg
     = GotAll (Result Http.Error String)
@@ -8,3 +10,5 @@ type Msg
     | FetchAll
     | FetchOne Int
     | Filter String
+    | StartRoutine
+    | Tick
