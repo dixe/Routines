@@ -8,7 +8,7 @@ import Browser
 import Html exposing (Html)
 import Http
 import Json.Decode exposing (Decoder, field, map2, int, string, decodeString, errorToString, list) -- maybe not in type module
-import Routine exposing (createRoutineListMaybe, setFilterString)
+import Routine exposing (createRoutineListMaybe, setFilterString, updateTick, finishSet)
 import List
 
 import Time
@@ -33,23 +33,32 @@ update msg model =
                  let (s,c) = fromResult result routinesInfoDecoder SuccessList
                  in
                      case s of
-                         SuccessList rs -> ((s,c),  createRoutineListMaybe rs)
+                         SuccessList rs -> ((model.status, c),  createRoutineListMaybe rs)
                          _ -> ((s,c), model.routines)
 
              GotSingle result ->
                  (fromResult result routineDecoder View, model.routines)
              FetchAll ->
-                 ((Loading, fetchRoutines), model.routines)
+                 ((model.status, fetchRoutines), model.routines)
              FetchOne id ->
                  (fetchRoutine id, model.routines)
              Filter s -> ((model.status, Cmd.none), setFilterString s model.routines)
-             Tick -> ((updateTick model.status, Cmd.none), model.routines)
+             Tick ->
+                 case model.status of
+                     Run r -> ((Run <| updateTick r, Cmd.none), model.routines)
+                     _ -> ((model.status, Cmd.none), model.routines)
              StartRoutine ->
                  case model.status of
-                     View r -> ((Run {routine = r, elapsed = 0}, Cmd.none), model.routines)
+                     View r -> ((Run r, Cmd.none), model.routines)
+                     _ -> ((model.status, Cmd.none), model.routines)
+             FinishSet ->
+                 case model.status of
+                     Run r -> ((Run <| finishSet r, Cmd.none), model.routines)
                      _ -> ((model.status, Cmd.none), model.routines)
     in
       ({routines = routines, status = newStatus}, cmd)
+
+
 
 fromResult : (Result Http.Error String) -> Decoder a -> (a -> Status) -> (Status, Cmd Msg)
 fromResult result decoder ret  =
@@ -59,7 +68,7 @@ fromResult result decoder ret  =
                 Ok routines ->
                     (ret routines, Cmd.none)
                 Err r ->
-                    (Failure (ParsingError (getErrorString r)), Cmd.none)
+                    (Failure (ParsingError <| (getErrorString r) ++ allText), Cmd.none)
         Err _ ->
             (Failure LoadingError, Cmd.none)
 

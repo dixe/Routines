@@ -1,6 +1,5 @@
 module Layout exposing (viewMain)
 
-import Types exposing (..)
 import Exercise exposing (..)
 import Html exposing (Html)
 import Element exposing (..)
@@ -12,6 +11,8 @@ import Element.Input as Input
 import Element.Region as Region
 import Message exposing (..)
 import Routine exposing (..)
+import LayoutHelpers exposing (..)
+import Types exposing (..)
 
 viewMain : Model -> Html Msg
 viewMain model =
@@ -19,44 +20,38 @@ viewMain model =
         [Font.size 20
         ]
     <|
-        column [width fill, height fill]
+        column [width fill, height fill, spacing 10]
             [
              el
              [ Region.heading 1
              , centerX
-             , alignTop
+             , centerY
              , Font.size 36
-             , padding 10
-             , alignTop
-             , height (fillPortion 1)
+             , padding 20
              ]
              (text "Welcome to routine browser")
             , spacerLine
-            , row [alignLeft, alignTop, height (fillPortion 10)]
-                [ el [alignTop, height fill, padding 5] (routinesPanel model)
-                , el [alignTop, padding 5] (routinePanel model)
+            , row [alignLeft, alignTop, height (fillPortion 16), width fill]
+                [ el [alignTop, height fill, padding 5, width (fillPortion 1), clip] (routinesPanel model)
+                , el [alignTop, height fill, padding 5, width (fillPortion 1), clip] (routinePanel model)
+                , el [alignTop, height fill, padding 5, width (fillPortion 6), clip] (runRoutinePanel model)
                 ]
             ]
 
 
+-- PANELS
+
 routinesPanel : Model -> Element Msg
 routinesPanel model =
-    Element.column [ centerY
-                   , centerX
-                   , padding 10
-                   , spacing 10
-                   , height fill
-                   , Border.rounded 4
-
-                   , Background.color panelBackgroundColor
-                   ]
+    Element.column
+        panelLayout
         [
          Input.button
              buttonLayout
              { onPress = Just FetchAll
-             , label = text "Fetch routines"
+             , label = text "Reset"
              }
-        , viewRoutineFilter
+        , viewRoutineFilter <| getFilterValue model.routines
         , viewRoutines model.routines
         ]
 
@@ -64,18 +59,32 @@ routinesPanel model =
 routinePanel : Model -> Element Msg
 routinePanel model =
     case model.status of
-        Failure problem ->
-            displayError problem
-        Loading ->
-            none
-        View r ->
-            viewRoutine r
-        Run r ->
-            text ("running" ++ getName r.routine ++ " Elapsed: " ++ String.fromInt r.elapsed)
-        _ ->
-            none
+        Failure problem -> displayError problem
+        View r -> el panelLayout <| viewRoutine r
+        Run r -> el panelLayout <| viewRoutine r
+        _ -> none
 
 
+runRoutinePanel : Model -> Element Msg
+runRoutinePanel model =
+    case model.status of
+        Run r -> el panelLayout <| viewRunRoutine <| r
+        View r ->   Input.button
+                    listButtonLayout
+                    { onPress = Just (StartRoutine)
+                    , label = text ("Start")
+                    }
+        _ -> none
+
+
+-- ROUTINES
+
+
+viewRunRoutine : Routine -> Element Msg
+viewRunRoutine r =
+    case r.current of
+        Nothing -> text  <| "All done!"
+        Just e -> viewRunExercise e r.elapsed
 
 
 viewRoutine : Routine -> Element Msg
@@ -88,38 +97,29 @@ viewRoutine r =
 
     [ el [Font.size 25] (text (getName r))
     , viewRoutineExercises (getExercises r)
-    , Input.button
-        listButtonLayout
-        { onPress = Just (StartRoutine)
-        , label = text ("Start")
-        }
     ]
 
-
-displayError : Problem -> Element Msg
-displayError problem =
-    case problem of
-        LoadingError -> text "Error loading data"
-        ParsingError data -> text ("Error parsing data : " ++ data)
 
 
 viewRoutines : RoutineListMaybe -> Element Msg
 viewRoutines routines = column [ spacing 10
                                , paddingXY 0 10
-                               , alignLeft] (List.map viewListedRoutine  (getRoutineListFiltered routines))
+                               , alignLeft
+                               , height fill
+                               ] (List.map viewListedRoutine (getRoutineListFiltered routines))
 
 
 
-viewRoutineFilter : Element Msg
-viewRoutineFilter = Input.text
-                    [
-                     Font.size 20
-                    ]
-                    { label = Input.labelHidden ""
-                    , onChange = Filter
-                    , placeholder = Nothing -- Just (Input.placeholder [] (text "Name Filter"))
-                    , text = ""
-                    }
+viewRoutineFilter : String -> Element Msg
+viewRoutineFilter s = Input.text
+                      [
+                       Font.size 20
+                      ]
+                      { label = Input.labelHidden ""
+                      , onChange = Filter
+                      , placeholder = Nothing -- Just (Input.placeholder [] (text "Name Filter"))
+                      , text = s
+                      }
 
 
 
@@ -131,57 +131,10 @@ viewListedRoutine r = Input.button
                       }
 
 
-spacerLine : Element Msg
-spacerLine =
-    column [width fill]
-        [
-         el [ width fill
-            , Border.width 1
-            , Border.color gray
-            ]
-             none
-        , el [ paddingXY 0 10 ] none
-        ]
+-- HELPERS
 
-buttonLayout : (List (Attribute Msg))
-buttonLayout = [ Background.color buttonColor
-               , Font.color black
-               , Border.color black
-               , paddingXY 16 10
-               , Border.rounded 3
-               , Font.size 24
-               ]
-
-
-
-listButtonLayout : (List (Attribute Msg))
-listButtonLayout = [ Background.color buttonColor
-               , Font.color black
-               , Border.color black
-               , paddingXY 10 5
-               , Border.rounded 3
-               , Font.size 20
-               ]
-
-
-
--- COLORS
-
-buttonColor = darkGray
-
-panelBackgroundColor = gray
-
-
-white = Element.rgb 1 1 1
-
-black = Element.rgb 0  0 0
-
-gray = Element.rgb 0.9 0.9 0.9
-
-darkGray = Element.rgb 0.8 0.8 0.8
-
-blue = Element.rgb 0 0 0.8
-
-red = Element.rgb 0.8 0 0
-
-darkBlue =Element.rgb 0 0 0.9
+displayError : Problem -> Element Msg
+displayError problem =
+    case problem of
+        LoadingError -> text "Error loading data"
+        ParsingError data -> text ("Error parsing data : " ++ data)

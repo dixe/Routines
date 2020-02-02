@@ -24,6 +24,16 @@ repsAndSetsDecoder = Decode.succeed createRepsAndSet
                    |> required "repsAndSetRestTime" int
                    |> required "repsAndSetSets" int
 
+
+
+timeAndSetsDecoder : Decoder Exercise
+timeAndSetsDecoder = Decode.succeed createTimeAndSet
+                   |> required "timeAndSetName" string
+                   |> required "timeAndSetActiveTime" int
+                   |> required "timeAndSetRestTime" int
+                   |> required "timeAndSetSets" int
+
+
 complexDecoder : Decoder Exercise
 complexDecoder = Decode.succeed createComplex
                  |> required "complexName" string
@@ -35,7 +45,7 @@ complexDecoder = Decode.succeed createComplex
 
 
 exerciseDecoder : Decoder Exercise
-exerciseDecoder = atdDecoder [(restDecoder,"Rest"), (repsAndSetsDecoder,"RepsAndSet"), (complexDecoder,"Complex") ]
+exerciseDecoder = atdDecoder [(restDecoder,"Rest"), (repsAndSetsDecoder,"RepsAndSet"), (complexDecoder,"Complex"), (timeAndSetsDecoder,"TimeAndSet")]
 
 
 

@@ -1,11 +1,14 @@
-module Routine exposing(Routine, RoutineListMaybe, RoutineList, RoutineInfo, getName, getId, getExercises, getNameInfo, getIdInfo, createRoutineInfo, createRoutine, getRoutineList, createRoutineListMaybe, setFilterString, getRoutineListFiltered)
+module Routine exposing(Routine, RoutineListMaybe, RoutineList, RoutineInfo, getName, getId, getExercises, getNameInfo, getIdInfo, createRoutineInfo, createRoutine, getRoutineList, createRoutineListMaybe, setFilterString, getRoutineListFiltered, getFilterValue, updateTick, getCurrentName, finishSet)
 
-import Exercise exposing (..)
+import Exercise as Ex exposing (..)
 
-type Routine = Routine  { id : Int
-                        , name : String
-                        , exercises : (List Exercise)
-                        }
+type alias Routine =  { id : Int
+                      , name : String
+                      , elapsed : Int
+                      , completed : List Ex.Exercise
+                      , current : Maybe Ex.Exercise
+                      , remaining : List Ex.Exercise
+                      }
 
 
 type RoutineInfo = RoutineInfo { id : Int
@@ -27,16 +30,22 @@ filterRoutine s ri = String.contains (String.toLower s) (String.toLower (getName
 
 
 
--- GETTER AND SETTERS
+-- GETTER
 
 getName : Routine -> String
-getName (Routine r) = r.name
+getName r = r.name
 
 getId : Routine -> Int
-getId (Routine r) = r.id
+getId r = r.id
 
-getExercises : Routine -> List Exercise
-getExercises (Routine r) = r.exercises
+getExercises : Routine -> List Ex.Exercise
+getExercises r =
+    let currentList  =
+            case r.current of
+                Just c -> [c]
+                Nothing -> []
+    in
+        r.completed ++ currentList ++ r.remaining
 
 getNameInfo : RoutineInfo -> String
 getNameInfo (RoutineInfo r) = r.name
@@ -58,10 +67,26 @@ getRoutineList rm =
         Just ri -> ri.routines
 
 
+getFilterValue : RoutineListMaybe -> String
+getFilterValue rlm =
+    case rlm of
+        Just r -> r.nameFilter
+        Nothing -> ""
+
+getCurrentName : Routine -> String
+getCurrentName r = case r.current of
+                       Nothing -> "All is done"
+                       Just e -> Ex.getExerciseName e
+
+
+
 -- CREATE FUNCTIONS
 
-createRoutine : Int -> String -> (List Exercise) -> Routine
-createRoutine id name exs = Routine {id = id, name = name, exercises = exs }
+createRoutine : Int -> String -> (List Ex.Exercise) -> Routine
+createRoutine id name exs =
+    case exs of
+        [] -> {id = id, name = name, remaining = exs, elapsed = 0, current = Nothing, completed = []}
+        (e::es) -> {id = id, name = name, remaining = es, elapsed = 0, current = Just e, completed = []}
 
 
 createRoutineInfo : Int -> String -> RoutineInfo
@@ -71,6 +96,7 @@ createRoutineInfo id name = RoutineInfo { id = id, name = name }
 createRoutineListMaybe : List RoutineInfo -> RoutineListMaybe
 createRoutineListMaybe rl = Just  { routines = rl, nameFilter = ""}
 
+
 -- UPDATE FUNCTIONS
 
 setFilterString : String -> RoutineListMaybe -> RoutineListMaybe
@@ -78,3 +104,41 @@ setFilterString s rm =
     case rm of
         Just r -> Just {r | nameFilter = s}
         Nothing -> rm
+
+
+updateTick : Routine -> Routine
+updateTick r =
+    let timeUpdated = { r | elapsed = r.elapsed + 1}
+    in
+        case timeUpdated.current of
+            Just e ->
+                case Ex.updateTick timeUpdated.elapsed e of
+                    Just eu  -> { timeUpdated | current = Just eu}
+                    Nothing -> nextExercise timeUpdated
+            Nothing ->  nextExercise timeUpdated
+
+
+
+nextExercise : Routine -> Routine
+nextExercise r =
+    let currentList  =
+            case r.current of
+                Just c -> [c]
+                Nothing -> []
+    in
+        case r.remaining of
+            [] -> { r | current = Nothing
+                  , completed = r.completed ++ currentList
+                  }
+            (e::es) -> { r | remaining = es
+                       , completed = r.completed ++ currentList
+                       , current = Just e
+                       , elapsed = 0
+                       }
+
+
+finishSet : Routine -> Routine
+finishSet r =
+    case r.current of
+        Just e -> { r | current = Ex.finishSet r.current }
+        Nothing -> r

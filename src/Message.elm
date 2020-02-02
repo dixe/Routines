@@ -12,3 +12,4 @@ type Msg
     | Filter String
     | StartRoutine
     | Tick
+    | FinishSet
